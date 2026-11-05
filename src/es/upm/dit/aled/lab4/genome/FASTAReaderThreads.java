@@ -116,7 +116,41 @@ public class FASTAReaderThreads {
 	 */
 	public List<Integer> search(byte[] pattern) {
 		// TODO
-		return null;
+		List<Integer> solucion = new ArrayList<>();
+
+		int cores = Runtime.getRuntime().availableProcessors();
+		ExecutorService executor = Executors.newFixedThreadPool(cores);
+		
+		
+		int tamTarea = validBytes/cores;
+		
+		List<Future<List<Integer>>> futuros = new ArrayList<>();
+		
+		//Crea todas las tareas menos la última
+		for (int i = 0; i<cores - 1;i++) {
+			int lo = i*tamTarea;
+			int hi = (i+1)*tamTarea;
+			FASTASearchCallable tarea = new FASTASearchCallable(this, lo, hi, pattern);
+			Future<List<Integer>> futuro = executor.submit(tarea);
+			futuros.add(futuro);
+			
+		}
+		
+		int lo= 3;
+		int hi = validBytes;
+		
+		FASTASearchCallable tarea = new FASTASearchCallable(this, lo, hi, pattern);
+		Future<List<Integer>> futuro = executor.submit(tarea);
+		futuros.add(futuro);
+		
+		for(Future<List<Integer>> future : futuros) {
+			List<Integer> resParcial = future.get();
+			solucion.addAll(resParcial);
+		}
+		
+		executor.shutdown();
+		
+		return solucion;
 	}
 
 	public static void main(String[] args) {
