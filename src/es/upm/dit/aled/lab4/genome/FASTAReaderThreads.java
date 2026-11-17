@@ -1,4 +1,7 @@
-package es.upm.dit.aled.lab4.genome;
+
+	package es.upm.dit.aled.lab4.genome;
+		
+	
 
 import java.io.DataInput;
 import java.io.DataInputStream;
@@ -8,6 +11,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -115,10 +119,11 @@ public class FASTAReaderThreads {
 	 *         pattern in the data.
 	 */
 	public List<Integer> search(byte[] pattern) {
-		// TODO
+
 		List<Integer> solucion = new ArrayList<>();
 
 		int cores = Runtime.getRuntime().availableProcessors();
+		//crea tantas tareas como cores
 		ExecutorService executor = Executors.newFixedThreadPool(cores);
 		
 		
@@ -136,7 +141,7 @@ public class FASTAReaderThreads {
 			
 		}
 		
-		int lo= 3;
+		int lo= (cores - 1)*tamTarea;
 		int hi = validBytes;
 		
 		FASTASearchCallable tarea = new FASTASearchCallable(this, lo, hi, pattern);
@@ -144,8 +149,14 @@ public class FASTAReaderThreads {
 		futuros.add(futuro);
 		
 		for(Future<List<Integer>> future : futuros) {
-			List<Integer> resParcial = future.get();
-			solucion.addAll(resParcial);
+			try {
+				List<Integer> resParcial = future.get();
+				solucion.addAll(resParcial);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			} catch (ExecutionException e) {
+				e.printStackTrace();
+			}
 		}
 		
 		executor.shutdown();
